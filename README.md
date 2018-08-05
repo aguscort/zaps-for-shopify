@@ -1,20 +1,14 @@
 # zaps-for-shopify
+[![Coverage Status](https://coveralls.io/repos/github/aguscortes/zaps-for-shopify/badge.svg?branch=master)](https://coveralls.io/github/aguscortes/zaps-for-shopify?branch=master)
 
-## Job details 
+### Table of Contents
 
-1. Create a Zap that send an email every time we get a new customer that pays >$3 on an order with their information.
-2. Create a Zap that send an email every time it is someone's second order.
-3.  Create a Zap that send an email everytime we get an order from someone who has not purchased in over 90 days with their 
-
-Subject line should be something like 1. New customer 2. First reorder 3. Wonback customer
-Inside the body of the email should tell me the customer and order details and the marketing source (utm, etc) if there is one
-
-## Proposal
-### Case 1:
-![Case 1](https://github.com/aguscortes/zaps-for-shopify/raw/master/Case1.png "Case 1")
-
-### Case 2:
-![Case 2](https://github.com/aguscortes/zaps-for-shopify/raw/master/Case2.png "Case 2")
-
-### Case 3:
-![Case 2](https://github.com/aguscortes/zaps-for-shopify/raw/master/Case3.png "Case 3")
+1. [Task details](//github.com/aguscortes/zaps-for-shopify/wiki/Home)
+   * [Case 1](//github.com/aguscortes/zaps-for-shopify/wiki/Case-1)
+   * [Case 2](//github.com/aguscortes/zaps-for-shopify/wiki/Case-2)
+   * [Case 3](//github.com/aguscortes/zaps-for-shopify/wiki/Case-3)
+   * [Case 4](//github.com/aguscortes/zaps-for-shopify/wiki/Case-4)
+   * [Case 4+](//github.com/aguscortes/zaps-for-shopify/wiki/Case-4plus)
+2. [Requirements](//github.com/aguscortes/zaps-for-shopify/wiki/Requirements)  
+3. [Task details](//github.com/aguscortes/zaps-for-shopify/wiki/Task-details)  
+4. [Next](//github.com/aguscortes/zaps-for-shopify/wiki/Next)  
