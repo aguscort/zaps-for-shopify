@@ -41,7 +41,6 @@ def dateTreatment():
     datetoday = date.strftime('%Y-%m-%d')
     datetomorrow = datetime.now() + timedelta(days=1)
     datetomorrow = datetomorrow.strftime('%Y-%m-%d')
-    
     try:
         datelastmonth = (date - timedelta(days=date.day)).replace(day=date.day)
     except ValueError:
@@ -125,17 +124,30 @@ try:
     ordersFormerMonth = getOrdersPeriod('shipstation', datelastmonth[:8] + '01', datelastmonth)
 except:
     errorQueryShipstation = True
-    
-if errorQueryShipstation == False:
+
+if errorQueryShipstation is False:
     for order in range(len(ordersToday['orders'])):
-        arr_todays_sales.append (float(ordersToday['orders'][order]['orderTotal']))
-        todays_sales += float(ordersToday['orders'][order]['orderTotal'])
-        total_orders += 1
         if (ordersToday['orders'][order]['advancedOptions']['source']) == 'web':
-            #online_orders += 1
-            #online_sales += float(ordersToday['orders'][order]['orderTotal'])
-            pass
+            if input_data['takeInfoFromShopify'] == 'False':
+                arr_todays_sales.append (float(ordersToday['orders'][order]['orderTotal']))
+                todays_sales += float(ordersToday['orders'][order]['orderTotal'])
+                total_orders += 1            
+                online_orders += 1
+                online_sales += float(ordersToday['orders'][order]['orderTotal'])
+                errorQueryShopify = True
+                for product in range(len(ordersToday['orders'][order]['items'])):
+                    product_name = str(ordersToday['orders'][order]['items'][product]['name']) 
+                    if product_name.find('Varnish') != -1:
+                        units_of_varnish_sold += int(ordersToday['orders'][order]['items'][product]['quantity']) 
+                    elif product_name.find('Prophy') != -1:    
+                        units_of_prophy_sold += int(ordersToday['orders'][order]['items'][product]['quantity'])                
+                errorQueryShopify = True       
+            else:                
+                pass
         else:
+            arr_todays_sales.append (float(ordersToday['orders'][order]['orderTotal']))
+            todays_sales += float(ordersToday['orders'][order]['orderTotal'])
+            total_orders += 1            
             manual_orders += 1
             manual_sales += float(ordersToday['orders'][order]['orderTotal'])    
             for product in range(len(ordersToday['orders'][order]['items'])):
@@ -145,7 +157,6 @@ if errorQueryShipstation == False:
                 elif product_name.find('Prophy') != -1:    
                     units_of_prophy_sold += int(ordersToday['orders'][order]['items'][product]['quantity'])
 
-
     # Check all monthly orders
     for order in range(len(ordersCurrentMonth['orders'])):
         monthly_sales += float(ordersCurrentMonth['orders'][order]['orderTotal'])
@@ -153,41 +164,68 @@ if errorQueryShipstation == False:
     # Check all last period orders
     for order in range(len(ordersFormerMonth['orders'])):
         last_month_sales_same_period += float(ordersFormerMonth['orders'][order]['orderTotal'])
-
-        
+                                              
+                                              
 ##############
 #
 # SHOPIFY
 #
 ##############
-try:
-    ordersToday = getOrdersToday('shopify', datetoday)    
-    # ordersCurrentMonth = getOrdersPeriod('shopify', datetoday[:8] + '01', datetoday) #datetime.now().strftime('%Y-%m-%d'))
-    # ordersFormerMonth = getOrdersPeriod('shopify', datelastmonth[:8] + '01', datelastmonth) #datetime.now().strftime('%Y-%m-%d'))
-except:
-    errorQueryShopify = True
+if input_data['takeInfoFromShopify'] == 'True':
+    try:
+        ordersToday = getOrdersToday('shopify', datetoday)    
+        # ordersCurrentMonth = getOrdersPeriod('shopify', datetoday[:8] + '01', datetoday) #datetime.now().strftime('%Y-%m-%d'))
+        # ordersFormerMonth = getOrdersPeriod('shopify', datelastmonth[:8] + '01', datelastmonth) #datetime.now().strftime('%Y-%m-%d'))
+    except:
+        errorQueryShopify = True
 
-if errorQueryShopify == False:
-    # Check all orders
-    for order in range(len(ordersToday['orders'])):
-        arr_todays_sales.append (float(ordersToday['orders'][order]['total_price']))
-        todays_sales += float(ordersToday['orders'][order]['total_price'])
-        total_orders += 1
-        online_orders += 1
-        online_sales += float(ordersToday['orders'][order]['total_price'])        
-        # Filter orders with a min value
-        if float(ordersToday['orders'][order]['total_price']) > float(input_data['min_value']):
-            new_customers, first_time_reorders, converted_by_samples, wonback_customers = categorizeSale (ordersToday['orders'][order],new_customers, first_time_reorders, converted_by_samples, wonback_customers)
-        for product in range(len(ordersToday['orders'][order]['line_items'])):
-            product_name = str(ordersToday['orders'][order]['line_items'][product]['name']) 
-            if product_name.find('Varnish') != -1:
-                units_of_varnish_sold += int(ordersToday['orders'][order]['line_items'][product]['quantity']) 
-            elif product_name.find('Prophy') != -1:    
-                units_of_prophy_sold += int(ordersToday['orders'][order]['line_items'][product]['quantity'])
-                
+    if errorQueryShopify == False:
+        # Check all orders
+        url = 'https://store.zapier.com/api/records?secret=' + input_data['storage_key']
+        ordersToday = requests.get(url).json()        
+        for item in ordersToday:
+            try:
+                order = dict(ordersToday[item])
+                arr_todays_sales.append (float(order['order']['total_price']))
+                todays_sales += float(order['order']['total_price'])
+                total_orders += 1
+                online_orders += 1
+                online_sales += float(order['order']['total_price'])
+                # Filter orders with a min value
+                if float(order['order']['total_price']) > float(input_data['min_value']):
+                    new_customers, first_time_reorders, converted_by_samples, wonback_customers = categorizeSale (order['order'], new_customers, first_time_reorders, converted_by_samples, wonback_customers)
+                for product in range(len(order['order']['line_items'])):
+                    product_name = str(order['order']['line_items'][product]['name']) 
+                    if product_name.find('Varnish') != -1:
+                        units_of_varnish_sold += int(order['order']['line_items'][product]['quantity']) 
+                    elif product_name.find('Prophy') != -1:    
+                        units_of_prophy_sold += int(order['order']['line_items'][product]['quantity'])
+            except ValueError:
+                pass
+            except KeyError:
+                pass
+        # for order in range(len(ordersToday['orders'])):
+        #     arr_todays_sales.append (float(ordersToday['orders'][order]['total_price']))
+        #     todays_sales += float(ordersToday['orders'][order]['total_price'])
+        #     total_orders += 1
+        #     online_orders += 1
+        #     online_sales += float(ordersToday['orders'][order]['total_price'])        
+        #     # Filter orders with a min value
+        #     if float(ordersToday['orders'][order]['total_price']) > float(input_data['min_value']):
+        #         new_customers, first_time_reorders, converted_by_samples, wonback_customers = categorizeSale (ordersToday['orders'][order], new_customers, first_time_reorders, converted_by_samples, wonback_customers)
+        #     for product in range(len(ordersToday['orders'][order]['line_items'])):
+        #         product_name = str(ordersToday['orders'][order]['line_items'][product]['name']) 
+        #         if product_name.find('Varnish') != -1:
+        #             units_of_varnish_sold += int(ordersToday['orders'][order]['line_items'][product]['quantity']) 
+        #         elif product_name.find('Prophy') != -1:    
+        #             units_of_prophy_sold += int(ordersToday['orders'][order]['line_items'][product]['quantity'])
+                        
+if len(arr_todays_sales) == 0:
+    arr_todays_sales.append(0.0)                        
+
 # Building the response
 if not (errorQueryShopify == True and errorQueryShipstation == True):
-    output_data['date_report'] = datetoday
+    output_data['date_report'] = datetime.strptime(datetoday,'%Y-%m-%d').strftime('%d-%m-%Y')
     output_data['todays_sales'] = "{:0,.2f}".format(todays_sales)
     output_data['monthly_sales'] = "{:0,.2f}".format(monthly_sales)
     output_data['last_month_sales_same_period'] = "{:0,.2f}".format(last_month_sales_same_period)
