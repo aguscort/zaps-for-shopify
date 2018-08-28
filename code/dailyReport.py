@@ -34,12 +34,11 @@ avg_sale = 0.0                      # Check
 units_of_varnish_sold = 0           # Check
 units_of_prophy_sold = 0            # Check
 
-
 def dateTreatment():
     # Date treatment
-    date = datetime.now()
+    date = datetime.utcnow() - timedelta(hours=7)
     datetoday = date.strftime('%Y-%m-%d')
-    datetomorrow = datetime.now() + timedelta(days=1)
+    datetomorrow = date + timedelta(days=1)
     datetomorrow = datetomorrow.strftime('%Y-%m-%d')
     try:
         datelastmonth = (date - timedelta(days=date.day)).replace(day=date.day)
@@ -99,7 +98,8 @@ def categorizeSale(order, new_customers, first_time_reorders, converted_by_sampl
             else:
                 first_time_reorders += 1
         else:  # More than 2 orders...
-            timeDifference = datetime.now() - datetime.strptime(str(orders['orders'][1]['created_at'][0:19]), '%Y-%m-%dT%H:%M:%S')
+            date = datetime.utcnow() - timedelta(hours=7)
+            timeDifference = date - datetime.strptime(str(orders['orders'][1]['created_at'][0:19]), '%Y-%m-%dT%H:%M:%S')
             if int(timeDifference.days) >= int(input_data['daysThreshold']): # is Wonback Customer?
                 wonback_customers += 1
             else:
@@ -174,8 +174,6 @@ if errorQueryShipstation is False:
 if input_data['takeInfoFromShopify'] == 'True':
     try:
         ordersToday = getOrdersToday('shopify', datetoday)    
-        # ordersCurrentMonth = getOrdersPeriod('shopify', datetoday[:8] + '01', datetoday) #datetime.now().strftime('%Y-%m-%d'))
-        # ordersFormerMonth = getOrdersPeriod('shopify', datelastmonth[:8] + '01', datelastmonth) #datetime.now().strftime('%Y-%m-%d'))
     except:
         errorQueryShopify = True
 
