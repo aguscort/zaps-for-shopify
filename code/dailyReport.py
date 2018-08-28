@@ -181,44 +181,21 @@ if input_data['takeInfoFromShopify'] == 'True':
 
     if errorQueryShopify == False:
         # Check all orders
-        url = 'https://store.zapier.com/api/records?secret=' + input_data['storage_key']
-        ordersToday = requests.get(url).json()        
-        for item in ordersToday:
-            try:
-                order = dict(ordersToday[item])
-                arr_todays_sales.append (float(order['order']['total_price']))
-                todays_sales += float(order['order']['total_price'])
-                total_orders += 1
-                online_orders += 1
-                online_sales += float(order['order']['total_price'])
-                # Filter orders with a min value
-                if float(order['order']['total_price']) > float(input_data['min_value']):
-                    new_customers, first_time_reorders, converted_by_samples, wonback_customers = categorizeSale (order['order'], new_customers, first_time_reorders, converted_by_samples, wonback_customers)
-                for product in range(len(order['order']['line_items'])):
-                    product_name = str(order['order']['line_items'][product]['name']) 
-                    if product_name.find('Varnish') != -1:
-                        units_of_varnish_sold += int(order['order']['line_items'][product]['quantity']) 
-                    elif product_name.find('Prophy') != -1:    
-                        units_of_prophy_sold += int(order['order']['line_items'][product]['quantity'])
-            except ValueError:
-                pass
-            except KeyError:
-                pass
-        # for order in range(len(ordersToday['orders'])):
-        #     arr_todays_sales.append (float(ordersToday['orders'][order]['total_price']))
-        #     todays_sales += float(ordersToday['orders'][order]['total_price'])
-        #     total_orders += 1
-        #     online_orders += 1
-        #     online_sales += float(ordersToday['orders'][order]['total_price'])        
-        #     # Filter orders with a min value
-        #     if float(ordersToday['orders'][order]['total_price']) > float(input_data['min_value']):
-        #         new_customers, first_time_reorders, converted_by_samples, wonback_customers = categorizeSale (ordersToday['orders'][order], new_customers, first_time_reorders, converted_by_samples, wonback_customers)
-        #     for product in range(len(ordersToday['orders'][order]['line_items'])):
-        #         product_name = str(ordersToday['orders'][order]['line_items'][product]['name']) 
-        #         if product_name.find('Varnish') != -1:
-        #             units_of_varnish_sold += int(ordersToday['orders'][order]['line_items'][product]['quantity']) 
-        #         elif product_name.find('Prophy') != -1:    
-        #             units_of_prophy_sold += int(ordersToday['orders'][order]['line_items'][product]['quantity'])
+        for order in range(len(ordersToday['orders'])):
+            arr_todays_sales.append (float(ordersToday['orders'][order]['total_price']))
+            todays_sales += float(ordersToday['orders'][order]['total_price'])
+            total_orders += 1
+            online_orders += 1
+            online_sales += float(ordersToday['orders'][order]['total_price'])        
+            # Filter orders with a min value
+            if float(ordersToday['orders'][order]['total_price']) > float(input_data['min_value']):
+                new_customers, first_time_reorders, converted_by_samples, wonback_customers = categorizeSale (ordersToday['orders'][order], new_customers, first_time_reorders, converted_by_samples, wonback_customers)
+            for product in range(len(ordersToday['orders'][order]['line_items'])):
+                product_name = str(ordersToday['orders'][order]['line_items'][product]['name']) 
+                if product_name.find('Varnish') != -1:
+                    units_of_varnish_sold += int(ordersToday['orders'][order]['line_items'][product]['quantity']) 
+                elif product_name.find('Prophy') != -1:    
+                    units_of_prophy_sold += int(ordersToday['orders'][order]['line_items'][product]['quantity'])
                         
 if len(arr_todays_sales) == 0:
     arr_todays_sales.append(0.0)                        
