@@ -1,5 +1,19 @@
-from datetime import datetime, timedelta
+ffrom datetime import datetime, timedelta, timezone
 import json
+import requests
+
+
+# New var
+input_data = {"apikey" :  "a6f473d83a22b5785c4dcedefc5b7dc0", \
+"shopname" : "wonderfuldental", \
+"min_value" : 5.0, \
+"password" : "54de0842bcef32ae85e923d3e7439708", \
+"CustomerID" : "", \
+"apikey_shipstation" :"64f643f8eeb9439e8b6ffa5ad0546e69", \
+"password_shipstation" :"46ea784fc25245d1962a3aafe39850f2", \
+"days_threshold" : 90 ,
+"storage_key" : "eN6upEG6wGCjCT7k" ,
+"take_info_from_shopify" : True }
 
 # New var
 output_data = {}
@@ -34,9 +48,9 @@ units_of_varnish_sold = 0           # Check
 units_of_prophy_sold = 0            # Check
 
 
-def date_treatment():
+def dateTreatment():
     # Date treatment
-    date = datetime.utcnow() - timedelta(hours=8)
+    date = datetime.utcnow() - timedelta(hours=7)
     datetoday = date.strftime('%Y-%m-%d')
     datetomorrow = date + timedelta(days=1)
     datetomorrow = datetomorrow.strftime('%Y-%m-%d')
@@ -64,7 +78,10 @@ def get_orders_period(tool, created_at_min, created_at_max):
         url = 'https://' + input_data['shopname'] + '.myshopify.com/admin/orders.json?order=created_at+desc&fields=id,fulfillment_service,total_price,created_at&financial_status=paid&created_at_min="' + created_at_min  +  'T00:00:00-00:00"&created_at_max="' + created_at_max  +  'T00:00:00-00:00"' 
         return requests.get(url, auth=(input_data['apikey'], input_data['password'])).json()
     elif tool == 'shipstation':
-        url = 'https://ssapi.shipstation.com/orders?createDateStart=' + created_at_min + '&createDateEnd=' + created_at_max + '&pageSize=500'        
+        #24url = 'https://ssapi.shipstation.com/orders?createDateStart=' + created_at_min + '&createDateEnd=' + created_at_max + '&pageSize=500'        
+        url = 'https://ssapi.shipstation.com/orders?createDateStart=' + created_at_min  + '&modifyDateStart=' + created_at_min + '&modifyDateEnd=' + created_at_max + '&pageSize=500'        
+        #24url = 'https://ssapi.shipstation.com/orders?orderDateStart=' + created_at_min + '&orderDateEnd=' + created_at_max + '&pageSize=500'        
+        #!url = 'https://ssapi.shipstation.com/orders?paymentDateStart=' + created_at_min + '&paymentDateEnd=' + created_at_max + '&pageSize=500'        
         return requests.get(url, auth=(input_data['apikey_shipstation'], input_data['password_shipstation'])).json()
     else:
         return None
@@ -121,13 +138,20 @@ datetoday, datetomorrow, datelastmonth = date_treatment()
 
 # Get info from SHIPSTATION
 try:
-    orders_today = get_orders_period('shipstation', datetoday, datetomorrow)     
-    orders_current_month = get_orders_period('shipstation', datetoday[:8] + '01', datetoday) 
-    orders_former_month = get_orders_period('shipstation', datelastmonth[:8] + '01', datelastmonth)
+    if datetoday[:8] + '01' == datetoday: # if is day 01        
+        orders_today = get_orders_period('shipstation', datetoday[:8] + '01', datetoday[:8] + '02')     
+        orders_current_month = get_orders_period('shipstation', datetoday[:8] + '01', datetoday[:8] + '02') 
+        orders_former_month = get_orders_period('shipstation', datelastmonth[:8] + '01', datelastmonth[:8] + '02')
+    else:           
+        orders_today = get_orders_period('shipstation', datetoday, datetomorrow)     
+        orders_current_month = get_orders_period('shipstation', datetoday[:8] + '30', datetoday[:8] + '31') 
+        orders_former_month = get_orders_period('shipstation', datelastmonth[:8] + '01', datelastmonth)
+
+
 except:
     error_query_shipstation = True
 
-if error_query_shipstation is False:
+if error_query_shipstation is False:    
     for order in range(len(orders_today['orders'])):
         if (orders_today['orders'][order]['advancedOptions']['source']) == 'web':
             if input_data['take_info_from_shopify'] == 'False':
@@ -160,10 +184,14 @@ if error_query_shipstation is False:
                     units_of_prophy_sold += int(orders_today['orders'][order]['items'][product]['quantity'])
 
     # Check all monthly orders
+    num = 0
     for order in range(len(orders_current_month['orders'])):
         monthly_sales += float(orders_current_month['orders'][order]['orderTotal'])
+        num += 1
+    print(num)
 
     # Check all last period orders
+    print (orders_former_month['pages'])
     for order in range(len(orders_former_month['orders'])):
         last_month_sales_same_period += float(orders_former_month['orders'][order]['orderTotal'])
                                               
@@ -220,23 +248,25 @@ if not (error_query_shopify == True and error_query_shipstation == True):
 output_data['error_query_shipstation'] = 'Error while querying SHIPSTATION' if error_query_shipstation == True else 'Query to SHIPSTATION succesful' 
 output_data['error_query_shopify'] = 'Error while querying SHOPIFY' if error_query_shopify == True else 'Query to SHOPIFY succesful'
 
-return {'date_report' : output_data['date_report'],  \
-    'todays_sales' : output_data['todays_sales'],  \
-    'monthly_sales' : output_data['monthly_sales'], \
-    'last_month_sales_same_period' : output_data['last_month_sales_same_period'], \
-    'total_orders' : output_data['total_orders'], \
-    'highest_sale' : output_data['highest_sale'], \
-    'median_sale' : output_data['median_sale'], \
-    'avg_sale' : output_data['avg_sale'], \
-    'manual_orders' : output_data['manual_orders'], \
-    'manual_sales' : output_data['manual_sales'], \
-    'online_orders' : output_data['online_orders'], \
-    'online_sales' : output_data['online_sales'], \
-    'new_customers' : output_data['new_customers'], \
-    'first_time_reorders' : output_data['first_time_reorders'], \
-    'converted_by_samples' : output_data['converted_by_samples'], \
-    'wonback_customers' : output_data['wonback_customers'], \
-    'units_of_varnish_sold' : output_data['units_of_varnish_sold'], \
-    'units_of_prophy_sold' : output_data['units_of_prophy_sold'], \
-    'error_query_shipstation' : output_data['error_query_shipstation'], \
-    'error_query_shopify' : output_data['error_query_shopify'] }
+# return {'date_report' : output_data['date_report'],  \
+#     'todays_sales' : output_data['todays_sales'],  \
+#     'monthly_sales' : output_data['monthly_sales'], \
+#     'last_month_sales_same_period' : output_data['last_month_sales_same_period'], \
+#     'total_orders' : output_data['total_orders'], \
+#     'highest_sale' : output_data['highest_sale'], \
+#     'median_sale' : output_data['median_sale'], \
+#     'avg_sale' : output_data['avg_sale'], \
+#     'manual_orders' : output_data['manual_orders'], \
+#     'manual_sales' : output_data['manual_sales'], \
+#     'online_orders' : output_data['online_orders'], \
+#     'online_sales' : output_data['online_sales'], \
+#     'new_customers' : output_data['new_customers'], \
+#     'first_time_reorders' : output_data['first_time_reorders'], \
+#     'converted_by_samples' : output_data['converted_by_samples'], \
+#     'wonback_customers' : output_data['wonback_customers'], \
+#     'units_of_varnish_sold' : output_data['units_of_varnish_sold'], \
+#     'units_of_prophy_sold' : output_data['units_of_prophy_sold'], \
+#     'error_query_shipstation' : output_data['error_query_shipstation'], \
+#     'error_query_shopify' : output_data['error_query_shopify'] }
+
+print (str(output_data))

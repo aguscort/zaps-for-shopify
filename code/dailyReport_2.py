@@ -48,6 +48,7 @@ def dateTreatment():
 
     datelastmonth = datelastmonth.strftime('%Y-%m-%d')
     return datetoday, datetomorrow, datelastmonth
+    return '2018-09-14','2018-09-15','2018-08-14','2018-08-14'
 
 def getMedian(lst):
     n = len(lst)
